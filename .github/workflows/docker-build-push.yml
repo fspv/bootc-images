@@ -1,0 +1,91 @@
+name: Build and Push Image and Create qcow2
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+env:
+  REGISTRY: docker.io
+  IMAGE_NAME: nuhotetotniksvoboden/bootc-desktop-base
+
+jobs:
+  build-and-create-qcow2:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Free up disk space
+      run: |
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /usr/local/lib/android
+        sudo rm -rf /opt/ghc
+        sudo rm -rf /opt/hostedtoolcache/CodeQL
+        sudo docker system prune -af
+        df -h
+
+    - name: Log in to Docker Hub
+      if: github.event_name != 'pull_request'
+      run: |
+        echo "${{ secrets.DOCKER_PASSWORD }}" | sudo podman login ${{ env.REGISTRY }} -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+    - name: Build image with Podman
+      run: |
+        LOCAL_TAG="localhost/bootc-desktop-base:latest"
+        REMOTE_TAG="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+        
+        echo "Building image..."
+        sudo podman build -f Containerfile -t $LOCAL_TAG -t $REMOTE_TAG .
+        
+        echo "Built image with tags:"
+        sudo podman images | grep bootc-desktop-base
+
+    - name: Push to Docker Hub
+      if: github.event_name != 'pull_request'
+      run: |
+        REMOTE_TAG="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+        echo "Pushing $REMOTE_TAG to Docker Hub..."
+        sudo podman push $REMOTE_TAG
+
+    - name: Create output directory
+      run: mkdir -p output
+
+    - name: Build qcow2 image
+      if: github.event_name == 'push'
+      run: |
+        LOCAL_IMAGE_TAG="localhost/bootc-desktop-base:latest"
+        echo "Building qcow2 from local image: $LOCAL_IMAGE_TAG"
+        sudo podman run --rm --privileged \
+          -v /var/lib/containers/storage:/var/lib/containers/storage \
+          -v $(pwd)/output:/output \
+          quay.io/centos-bootc/bootc-image-builder:latest \
+          --type qcow2 \
+          --rootfs ext4 \
+          $LOCAL_IMAGE_TAG
+
+    - name: List output files
+      if: github.event_name == 'push'
+      run: ls -la output/
+
+    - name: Upload qcow2 artifact
+      if: github.event_name == 'push'
+      uses: actions/upload-artifact@v4
+      with:
+        name: qcow2-disk-image
+        path: output/qcow2/*
+        retention-days: 30
+
+    - name: Display image info
+      if: github.event_name == 'push'
+      run: |
+        if [ -f output/qcow2/*.qcow2 ]; then
+          echo "qcow2 image built successfully:"
+          du -h output/qcow2/*.qcow2
+          file output/qcow2/*.qcow2
+        fi
