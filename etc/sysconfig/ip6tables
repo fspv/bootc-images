@@ -1,0 +1,75 @@
+*mangle
+:PREROUTING ACCEPT [0:0]
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+:POSTROUTING ACCEPT [0:0]
+COMMIT
+*nat
+:NF_PERSIST_POSTROUTING [0:0]
+# Do not forward locally generated packets
+-A NF_PERSIST_POSTROUTING -m addrtype --src-type LOCAL -j RETURN
+
+# Do not forward packets to internal networks (for security reasons)
+-A NF_PERSIST_POSTROUTING -o lo -j RETURN
+-A NF_PERSIST_POSTROUTING -o docker+ -j RETURN
+-A NF_PERSIST_POSTROUTING -o lxcbr+ -j RETURN
+-A NF_PERSIST_POSTROUTING -o virbr+ -j RETURN
+-A NF_PERSIST_POSTROUTING -o br-+ -j RETURN
+
+-A NF_PERSIST_POSTROUTING -j MASQUERADE
+:PREROUTING ACCEPT [0:0]
+:INPUT ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+:POSTROUTING ACCEPT [0:0]
+-A POSTROUTING -j NF_PERSIST_POSTROUTING
+COMMIT
+*filter
+:NF_PERSIST_INPUT [0:0]
+-A NF_PERSIST_INPUT -m addrtype --src-type LOCAL -d ::1/128 -j ACCEPT
+-A NF_PERSIST_INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+# Allow some ICMPv6 types in the INPUT chain
+# Using ICMPv6 type names to be clear.
+
+-A NF_PERSIST_INPUT -p icmpv6 --icmpv6-type destination-unreachable -j ACCEPT
+-A NF_PERSIST_INPUT -p icmpv6 --icmpv6-type packet-too-big -j ACCEPT
+-A NF_PERSIST_INPUT -p icmpv6 --icmpv6-type time-exceeded -j ACCEPT
+-A NF_PERSIST_INPUT -p icmpv6 --icmpv6-type parameter-problem -j ACCEPT
+
+# Allow some other types in the INPUT chain
+-A NF_PERSIST_INPUT -p icmpv6 --icmpv6-type echo-request -j ACCEPT
+-A NF_PERSIST_INPUT -p icmpv6 --icmpv6-type echo-reply -j ACCEPT
+
+# Allow others ICMPv6 types but only if the hop limit field is 255.
+
+-A NF_PERSIST_INPUT -p icmpv6 --icmpv6-type router-advertisement -m hl --hl-eq 255 -j ACCEPT
+-A NF_PERSIST_INPUT -p icmpv6 --icmpv6-type neighbor-solicitation -m hl --hl-eq 255 -j ACCEPT
+-A NF_PERSIST_INPUT -p icmpv6 --icmpv6-type neighbor-advertisement -m hl --hl-eq 255 -j ACCEPT
+-A NF_PERSIST_INPUT -p icmpv6 --icmpv6-type redirect -m hl --hl-eq 255 -j ACCEPT
+
+-A NF_PERSIST_INPUT -i lo -j ACCEPT
+-A NF_PERSIST_INPUT -i docker+ -j ACCEPT
+-A NF_PERSIST_INPUT -i lxcbr+ -j ACCEPT
+-A NF_PERSIST_INPUT -i virbr+ -j ACCEPT
+-A NF_PERSIST_INPUT -i br-+ -j ACCEPT
+-A NF_PERSIST_INPUT -j DROP
+:NF_PERSIST_FORWARD [0:0]
+# Do not forward packets from interfaces not identified as local
+-A NF_PERSIST_FORWARD -i lo -j ACCEPT
+-A NF_PERSIST_FORWARD -o lo -j ACCEPT
+-A NF_PERSIST_FORWARD -i docker+ -j ACCEPT
+-A NF_PERSIST_FORWARD -o docker+ -j ACCEPT
+-A NF_PERSIST_FORWARD -i lxcbr+ -j ACCEPT
+-A NF_PERSIST_FORWARD -o lxcbr+ -j ACCEPT
+-A NF_PERSIST_FORWARD -i virbr+ -j ACCEPT
+-A NF_PERSIST_FORWARD -o virbr+ -j ACCEPT
+-A NF_PERSIST_FORWARD -i br-+ -j ACCEPT
+-A NF_PERSIST_FORWARD -o br-+ -j ACCEPT
+-A NF_PERSIST_FORWARD -j DROP
+:INPUT ACCEPT [0:0]
+-A INPUT -j NF_PERSIST_INPUT
+:FORWARD ACCEPT [0:0]
+-A FORWARD -j NF_PERSIST_FORWARD
+:OUTPUT ACCEPT [0:0]
+COMMIT

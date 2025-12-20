@@ -1,0 +1,2 @@
+# Kernel arguments for Plymouth graphical boot with LUKS unlock
+kargs = ["quiet", "splash", "rd.luks.uuid=9a6218aa-6e36-4f0d-8567-770af1274240"]

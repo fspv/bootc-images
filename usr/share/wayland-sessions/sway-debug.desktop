@@ -1,0 +1,5 @@
+[Desktop Entry]
+Name=Sway (with debug log)
+Comment=An i3-compatible Wayland compositor
+Exec=sway-with-debug-log
+Type=Application
