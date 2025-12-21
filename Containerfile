@@ -61,7 +61,7 @@ RUN rpm --import https://rpm.tuxedocomputers.com/fedora/43/0x54840598.pub.asc \
         powertop tuned tuned-utils \
         tlp tlp-rdw thermald \
         yubikey-manager yubikey-personalization-gui \
-        yubico-piv-tool pam-u2f \
+        yubico-piv-tool pam-u2f pam_yubico pamu2fcfg \
         pcsc-lite pcsc-lite-ccid \
         opensc libfido2 \
         gdm plymouth \
@@ -78,9 +78,12 @@ COPY etc/locale.conf /etc/locale.conf
 COPY etc/et.cfg /etc/et.cfg
 
 RUN mkdir -p /etc/Yubico \
-    && touch /etc/Yubico/u2f_keys \
-    && echo "auth    required            pam_u2f.so nouserok authfile=/etc/Yubico/u2f_keys cue" >> /etc/pam.d/common-auth
+    && touch /etc/Yubico/u2f_keys
 
+COPY etc/pam.d/u2f-required /etc/pam.d/u2f-required
+COPY etc/pam.d/yubikey-auth.patch /tmp/yubikey-auth.patch
+
+RUN cd / && patch -p1 < /tmp/yubikey-auth.patch && rm /tmp/yubikey-auth.patch
 COPY etc/ssh/sshd_config.d/99-security.conf /etc/ssh/sshd_config.d/99-security.conf
 COPY etc/sysctl.d/99-user.conf /etc/sysctl.d/99-user.conf
 COPY etc/systemd/journald.conf.d/volatile.conf /etc/systemd/journald.conf.d/volatile.conf

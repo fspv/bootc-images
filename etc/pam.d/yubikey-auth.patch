@@ -1,0 +1,47 @@
+--- a/etc/pam.d/sshd
++++ b/etc/pam.d/sshd
+@@ -1,5 +1,6 @@
+ #%PAM-1.0
+ auth       substack     password-auth
++auth       include      u2f-required
+ auth       include      postlogin
+ account    required     pam_sepermit.so
+ account    required     pam_nologin.so
+--- a/etc/pam.d/sudo
++++ b/etc/pam.d/sudo
+@@ -1,5 +1,6 @@
+ #%PAM-1.0
+-auth       include      system-auth
++auth       substack     system-auth
++auth       include      u2f-required
+ account    include      system-auth
+ password   include      system-auth
+ session    optional     pam_keyinit.so revoke
+--- a/etc/pam.d/gdm-password
++++ b/etc/pam.d/gdm-password
+@@ -1,5 +1,6 @@
+ auth     [success=done ignore=ignore default=bad] pam_selinux_permit.so
+ auth        substack      password-auth
++auth       include      u2f-required
+ auth        optional      pam_gnome_keyring.so
+ auth        include       postlogin
+ 
+--- a/etc/pam.d/login
++++ b/etc/pam.d/login
+@@ -1,5 +1,6 @@
+ #%PAM-1.0
+ auth       substack     system-auth
++auth       include      u2f-required
+ auth       include      postlogin
+ account    required     pam_nologin.so
+ account    include      system-auth
+--- a/etc/pam.d/su
++++ b/etc/pam.d/su
+@@ -5,6 +5,7 @@
+ # Uncomment the following line to require a user to be in the "wheel" group.
+ #auth		required	pam_wheel.so use_uid
+ auth		substack	system-auth
++auth       include      u2f-required
+ auth		include		postlogin
+ account		sufficient	pam_succeed_if.so uid = 0 use_uid quiet
+ account		include		system-auth
