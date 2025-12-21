@@ -84,6 +84,10 @@ COPY etc/pam.d/u2f-required /etc/pam.d/u2f-required
 COPY etc/pam.d/yubikey-auth.patch /tmp/yubikey-auth.patch
 
 RUN cd / && patch -p1 < /tmp/yubikey-auth.patch && rm /tmp/yubikey-auth.patch
+
+RUN groupadd -r backlight
+
+COPY etc/udev/rules.d/90-backlight.rules /etc/udev/rules.d/90-backlight.rules
 COPY etc/ssh/sshd_config.d/99-security.conf /etc/ssh/sshd_config.d/99-security.conf
 COPY etc/sysctl.d/99-user.conf /etc/sysctl.d/99-user.conf
 COPY etc/systemd/journald.conf.d/volatile.conf /etc/systemd/journald.conf.d/volatile.conf
