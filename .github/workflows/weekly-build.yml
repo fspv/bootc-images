@@ -29,6 +29,15 @@ jobs:
       id: date
       run: echo "date=$(date +'%Y%m%d')" >> $GITHUB_OUTPUT
 
+    - name: Free up disk space
+      run: |
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /usr/local/lib/android
+        sudo rm -rf /opt/ghc
+        sudo rm -rf /opt/hostedtoolcache/CodeQL
+        sudo docker system prune -af
+        df -h
+
     - name: Build image with Podman
       run: |
         LOCAL_TAG="localhost/bootc-desktop-base:latest"
