@@ -1,15 +1,18 @@
-FROM quay.io/fedora/fedora-bootc:43
+FROM quay.io/fedora/fedora-bootc:44
 
 RUN dnf install -y 'dnf5-command(copr)' \
     && dnf copr enable -y wezfurlong/wezterm-nightly \
     && dnf config-manager addrepo --from-repofile=https://download.virtualbox.org/virtualbox/rpm/fedora/virtualbox.repo \
+    && sed -i 's|/fedora/$releasever/|/fedora/43/|' /etc/yum.repos.d/virtualbox.repo \
     && dnf config-manager addrepo --from-repofile=https://download.docker.com/linux/fedora/docker-ce.repo \
     && dnf config-manager addrepo --from-repofile=https://pkgs.tailscale.com/stable/fedora/tailscale.repo
 
 COPY etc/yum.repos.d/tuxedo.repo /etc/yum.repos.d/tuxedo.repo
 
+# TODO: switch to --setopt=install_weak_deps=False so unwanted Recommends
+# (e.g. tuned-ppd) never sneak in. For now we exclude individual offenders.
 RUN rpm --import https://rpm.tuxedocomputers.com/fedora/43/0x54840598.pub.asc \
-    && dnf install -y \
+    && dnf install -y --exclude=tuned-ppd --exclude=power-profiles-daemon \
         cryptsetup lvm2 \
         policycoreutils-python-utils \
         glibc-langpack-en glibc-langpack-ru glibc-locale-source \
@@ -25,7 +28,6 @@ RUN rpm --import https://rpm.tuxedocomputers.com/fedora/43/0x54840598.pub.asc \
         grim slurp wl-clipboard fzf flameshot \
         wdisplays wev \
         qt5-qtwayland qt5ct qt5-qtstyleplugins \
-        gnome-themes-extra \
         xorg-x11-server-Xwayland \
         gsettings-desktop-schemas \
         fcitx5 fcitx5-gtk fcitx5-qt \
@@ -47,7 +49,7 @@ RUN rpm --import https://rpm.tuxedocomputers.com/fedora/43/0x54840598.pub.asc \
         bluez bluetooth \
         samba-common \
         tailscale \
-        VirtualBox-7.1 \
+        VirtualBox-7.2 \
         virt-manager qemu-kvm libvirt \
         docker-ce docker-ce-cli containerd.io \
         docker-buildx-plugin docker-compose-plugin \
@@ -58,7 +60,7 @@ RUN rpm --import https://rpm.tuxedocomputers.com/fedora/43/0x54840598.pub.asc \
         kernel-modules-extra kernel-modules-internal \
         alsa-utils \
         acpid acpi upower \
-        powertop tuned tuned-utils \
+        powertop \
         tlp tlp-rdw thermald \
         yubikey-manager yubikey-personalization-gui \
         yubico-piv-tool pam-u2f pam_yubico pamu2fcfg \
@@ -149,12 +151,8 @@ RUN systemctl enable \
         ip6tables \
         nix.mount \
     && systemctl set-default graphical.target \
-    && systemctl disable firewalld 2>/dev/null || true \
-    && systemctl mask firewalld \
     && systemctl disable NetworkManager-wait-online.service \
-    && systemctl mask NetworkManager-wait-online.service \
-    && systemctl disable systemd-networkd-wait-online.service \
-    && systemctl mask systemd-networkd-wait-online.service
+    && systemctl mask NetworkManager-wait-online.service
 
 COPY usr/lib/bootc/kargs.d/50-plymouth.toml /usr/lib/bootc/kargs.d/50-plymouth.toml
 
