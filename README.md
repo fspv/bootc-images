@@ -60,7 +60,6 @@ mkdir output osbuild-store
 sudo podman run --rm -it --privileged \
     -v /var/lib/containers/storage:/var/lib/containers/storage \
     -v $(pwd)/output:/output \
-    -v $(pwd)/osbuild-store:/store \
     -v $(pwd)/config.toml:/config.toml:ro \
     quay.io/centos-bootc/bootc-image-builder:latest \
     --type qcow2 \
@@ -68,6 +67,13 @@ sudo podman run --rm -it --privileged \
     --local \
     localhost/fedora-sway-bootc:latest \
     --config /config.toml
+
+```
+
+Optionally add to cache the build results (doesn't work on MacOS, because store needs to support selinux)
+```
+    -v $(pwd)/osbuild-store:/store \
+
 ```
 
 Then you can use for example virt-manager to spin up a VM from this disk.

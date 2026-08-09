@@ -26,7 +26,7 @@ RUN rpm --import https://rpm.tuxedocomputers.com/fedora/43/0x54840598.pub.asc \
         wofi rofi \
         mako dunst \
         grim slurp wl-clipboard fzf flameshot \
-        wdisplays wev \
+        wdisplays wev wlr-randr \
         qt5-qtwayland qt5ct qt5-qtstyleplugins \
         xorg-x11-server-Xwayland \
         gsettings-desktop-schemas \
@@ -42,7 +42,7 @@ RUN rpm --import https://rpm.tuxedocomputers.com/fedora/43/0x54840598.pub.asc \
         git vim-enhanced \
         htop procps-ng \
         python3 python3-virtualenv python3-pip \
-        sqlite kernel-tools syslinux \
+        sqlite kernel-tools \
         cowsay fortune-mod \
         et \
         NetworkManager-wifi wpa_supplicant \
@@ -60,7 +60,7 @@ RUN rpm --import https://rpm.tuxedocomputers.com/fedora/43/0x54840598.pub.asc \
         kernel-modules-extra kernel-modules-internal \
         alsa-utils \
         acpid acpi upower \
-        powertop \
+        powertop tuned tuned-utils \
         tlp tlp-rdw thermald \
         yubikey-manager yubikey-personalization-gui \
         yubico-piv-tool pam-u2f pam_yubico pamu2fcfg \
@@ -70,9 +70,10 @@ RUN rpm --import https://rpm.tuxedocomputers.com/fedora/43/0x54840598.pub.asc \
         google-noto-emoji-color-fonts \
         flatpak \
         snapd \
-        iptables iptables-services \
-    && dnf install -y --setopt=tsflags=noscripts tuxedo-control-center \
+        iptables iptables-services patch \
     && dnf clean all
+
+RUN uname -m && [[ $(uname -m) != "aarch64" ]] && dnf install -y --setopt=tsflags=noscripts tuxedo-control-center || true
 
 RUN localedef -c -f UTF-8 -i en_US en_US.UTF-8
 COPY etc/locale.conf /etc/locale.conf
@@ -118,10 +119,10 @@ COPY etc/systemd/system/nix-daemon.service.d/after-nix-mount.conf /etc/systemd/s
 RUN flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
 RUN dnf install -y texinfo \
-    && git clone https://github.com/erkin/ponysay.git /tmp/ponysay \
-    && cd /tmp/ponysay \
+    && curl -L https://github.com/erkin/ponysay/archive/refs/heads/master.tar.gz | tar xz -C /tmp \
+    && cd /tmp/ponysay-master \
     && ./setup.py install --freedom=partial \
-    && rm -rf /tmp/ponysay \
+    && rm -rf /tmp/ponysay-master \
     && dnf remove -y texinfo \
     && dnf clean all
 
