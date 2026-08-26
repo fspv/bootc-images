@@ -37,6 +37,9 @@ RUN rpm --import https://rpm.tuxedocomputers.com/fedora/43/0x54840598.pub.asc \
         firefox \
         thunar feh \
         cheese vlc \
+        cups cups-filters cups-pk-helper cups-ipptool \
+        ghostscript gutenprint gutenprint-cups \
+        system-config-printer \
         network-manager-applet blueman \
         zenity \
         git vim-enhanced \
@@ -153,7 +156,8 @@ RUN systemctl enable \
         nix.mount \
     && systemctl set-default graphical.target \
     && systemctl disable NetworkManager-wait-online.service \
-    && systemctl mask NetworkManager-wait-online.service
+    && systemctl mask NetworkManager-wait-online.service \
+    && systemctl disable cups.service cups.socket cups.path
 
 COPY usr/lib/bootc/kargs.d/50-plymouth.toml /usr/lib/bootc/kargs.d/50-plymouth.toml
 
