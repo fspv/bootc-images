@@ -21,6 +21,23 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
+    - name: Pin podman to the native overlay storage driver
+      run: |
+        sudo mkdir -p /etc/containers
+        printf '%s\n' \
+          '[storage]' \
+          'driver = "overlay"' \
+          'runroot = "/run/containers/storage"' \
+          'graphroot = "/var/lib/containers/storage"' \
+          '' \
+          '[storage.options.overlay]' \
+          'mount_program = ""' \
+          | sudo tee /etc/containers/storage.conf
+        sudo rm -rf /var/lib/containers/storage
+        sudo podman version
+        sudo podman info --format 'graph driver: {{ .Store.GraphDriverName }}'
+        sudo podman info --format 'graph options: {{ .Store.GraphOptions }}'
+
     - name: Log in to Docker Hub
       run: |
         echo "${{ secrets.DOCKER_PASSWORD }}" | sudo podman login ${{ env.REGISTRY }} -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
