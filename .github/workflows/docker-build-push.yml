@@ -25,20 +25,11 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: List graphroot as baked into the runner image
-      run: sudo ls -A /var/lib/containers/storage || true
-
-    - name: Show podman storage before
-      run: sudo podman info --format 'driver={{ .Store.GraphDriverName }} options={{ .Store.GraphOptions }}'
-
     - name: Select the native overlay storage driver
       run: printf '[storage]\ndriver = "overlay"\n' | sudo tee /etc/containers/storage.conf
 
     - name: Reset the container store
       run: sudo rm -rf /var/lib/containers/storage
-
-    - name: Show podman storage after
-      run: sudo podman info --format 'driver={{ .Store.GraphDriverName }} options={{ .Store.GraphOptions }}'
 
     - name: Free up disk space
       run: |
