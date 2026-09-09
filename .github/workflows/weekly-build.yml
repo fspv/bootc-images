@@ -21,6 +21,12 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
+    - name: Select the native overlay storage driver
+      run: printf '[storage]\ndriver = "overlay"\n' | sudo tee /etc/containers/storage.conf
+
+    - name: Reset the container store
+      run: sudo rm -rf /var/lib/containers/storage
+
     - name: Log in to Docker Hub
       run: |
         echo "${{ secrets.DOCKER_PASSWORD }}" | sudo podman login ${{ env.REGISTRY }} -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
